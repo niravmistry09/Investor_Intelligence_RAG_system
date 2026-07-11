@@ -15,6 +15,14 @@ env/
 # VS Code
 .vscode/
 
+# data 
+data/raw_pdfs/*.pdf
+!data/raw_pdfs/.gitkeep
+
+# data फोल्डर का ढांचा गिटहब पर जाने दें, लेकिन उसके अंदर की पीडीएफ फाइलों को रोकें
+data/markdown/*.md
+!data/markdown/.gitkeep
+
 # macOS
 .DS_Store
 

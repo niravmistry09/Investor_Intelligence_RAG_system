@@ -18,10 +18,14 @@ class ChatRequest(BaseModel):
 @router.post("/chat")
 async def chat(request: ChatRequest):
     try:
-        # 1. Initialize Qdrant Client
-        qdrant_url = os.getenv("QDRANT_URL") or "http://localhost:6333"
+        # 1. Initialize Qdrant Client (AWS और क्लाउड प्रायरिटी के साथ)
+        qdrant_url = os.getenv("QDRANT_URL")
         qdrant_api_key = os.getenv("QDRANT_API_KEY")
         collection_name = os.getenv("QDRANT_COLLECTION_NAME") or "investor_intelligence"
+
+        # 🔥 सुरक्षा जांच: अगर AWS/क्लाउड एनवायरनमेंट में URL नहीं मिलता है, तो लोकलहोस्ट पर फॉलबैक करेंगे
+        if not qdrant_url:
+            qdrant_url = "http://localhost:6333"
 
         client = QdrantClient(
             url=qdrant_url,
@@ -39,12 +43,12 @@ async def chat(request: ChatRequest):
                 query=request.question,
                 company=request.company,
                 year=request.year,
-                top_k=10
+                top_k=25
             )
         else:
             semantic_docs = retriever.invoke(
                 query=request.question,
-                top_k=10
+                top_k=25
             )
             
         # 4. Step B: Local BM25 Keyword Search & Strict De-duplication

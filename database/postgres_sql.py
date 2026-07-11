@@ -6,17 +6,22 @@ from sqlalchemy import create_engine
 
 load_dotenv()
 
-
 def get_engine(database: str | None = None):
     """
-    Create PostgreSQL connection engine for local free version (SQLAlchemy).
+    Create PostgreSQL connection engine. Supports both Local and Cloud AWS DBs automatically.
     """
-    # Agar direct DATABASE_URL mil jaye (sabse clean aur best tarika)
     db_url = os.getenv("DATABASE_URL")
     if db_url:
-        # Agar url me galti se require reh gaya ho toh disable kar dete hain
-        if "sslmode=require" in db_url:
-            db_url = db_url.replace("sslmode=require", "sslmode=disable")
+        # 🔥 AWS / क्लाउड के लिए SSL मोड को सुरक्षित तरीके से ऑन रखना अनिवार्य है
+        if "localhost" not in db_url and "127.0.0.1" not in db_url:
+            # अगर URL में sslmode नहीं है, तो जोड़ें, और अगर 'disable' है तो उसे 'require' करें
+            if "sslmode=disable" in db_url:
+                db_url = db_url.replace("sslmode=disable", "sslmode=require")
+            elif "sslmode" not in db_url:
+                separator = "&" if "?" in db_url else "?"
+                db_url = f"{db_url}{separator}sslmode=require"
+            
+            return create_engine(db_url, connect_args={"sslmode": "require"})
         return create_engine(db_url)
 
     # Fallback to individual variables if DATABASE_URL is missing
@@ -28,39 +33,45 @@ def get_engine(database: str | None = None):
     user = os.getenv("POSTGRES_USER") or os.getenv("DB_USER", "postgres")
     password = os.getenv("POSTGRES_PASSWORD") or os.getenv("DB_PASSWORD", "")
 
-    # URL-encode credentials to handle special characters (e.g., @ in password)
     encoded_user = quote(user, safe="")
     encoded_password = quote(password, safe="")
 
-    # ❌ "?sslmode=require" ko hatakar "?sslmode=disable" kar diya local machine ke liye
+    # लोकल मशीन के लिए disable रहेगा, लेकिन क्लाउड के लिए ऑटो-डिटेक्ट होगा
+    ssl_mode = "disable" if host in ["localhost", "127.0.0.1"] else "require"
+
     connection_string = (
         f"postgresql+psycopg2://"
         f"{encoded_user}:{encoded_password}@{host}:{port}/{database}"
-        "?sslmode=disable"
+        f"?sslmode={ssl_mode}"
     )
 
+    if ssl_mode == "require":
+        return create_engine(connection_string, connect_args={"sslmode": "require"})
     return create_engine(connection_string)
 
 
 def create_database() -> None:
     """
-    Create the target database if it does not exist using native psycopg2.
+    Create the target database if it does not exist. Gracefully bypasses on Cloud environments.
     """
     target_db = os.getenv("POSTGRES_DATABASE") or os.getenv("DB_NAME", "investor_intelligence")
     db_url = os.getenv("DATABASE_URL")
 
+    # 🔥 सुरक्षा जांच: अगर क्लाउड डेटाबेस है, तो हम 'CREATE DATABASE' स्क्रिप्ट को स्किप कर देंगे 
+    # ताकि परमिशन एरर की वजह से सर्वर क्रैश न हो।
+    if db_url and "localhost" not in db_url and "127.0.0.1" not in db_url:
+        print("Cloud Database detected. Skipping native database creation to avoid permission crash.")
+        return
+
     try:
-        # Connect to default 'postgres' system database to check or create target database
         if db_url:
-            # Agar URL pure main database ka hai, toh bootstrap ke liye default 'postgres' db string nikalte hain
-            # Kyunki chalte hue target database ko hum drop/create nahi kar sakte uske andar rehte hue.
             base_url, _ = db_url.split('?')[0].rsplit('/', 1)
             bootstrap_url = f"{base_url}/postgres?sslmode=disable"
             conn = psycopg2.connect(dsn=bootstrap_url)
         else:
             conn = psycopg2.connect(
                 host=os.getenv("DB_HOST", "localhost"),
-                database="postgres",  # Default system DB to perform creation
+                database="postgres",
                 user=os.getenv("DB_USER", "postgres"),
                 password=os.getenv("DB_PASSWORD", ""),
                 port=os.getenv("DB_PORT", "5432"),
@@ -71,7 +82,6 @@ def create_database() -> None:
         cursor = conn.cursor()
         
         try:
-            # Check if database exists
             cursor.execute(
                 "SELECT 1 FROM pg_database WHERE datname = %s",
                 (target_db,)
@@ -88,5 +98,7 @@ def create_database() -> None:
             conn.close()
             
     except Exception as exc:
-        print(f"Failed to create database: {exc}")
-        raise
+        print(f"Failed to create database locally: {exc}")
+        # इसे केवल लोकल पर क्रैश होने देंगे, क्लाउड पर नहीं
+        if not db_url or "localhost" in db_url:
+            raise
