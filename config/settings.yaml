@@ -1,0 +1,11 @@
+frontend:
+  api_url: http://localhost:8000
+
+backend:
+  qdrant:
+    url: http://localhost:6333
+    collection_name: investor-intelligence
+  groq:
+    model: llama-3.3-70b-versatile
+  database:
+    url: postgresql://postgres:password@localhost:5432/investor_intelligence
