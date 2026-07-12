@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from qdrant_client import QdrantClient, models
 from langchain_huggingface import HuggingFaceEmbeddings
 
-# Local embedding model initialization (all-MiniLM-L6-v2)
+# Local embedding model initialization 
 embeddings_model = HuggingFaceEmbeddings(model_name="BAAI/bge-large-en-v1.5")
 
 
@@ -21,7 +21,7 @@ class AISearchVectorStore:
         qdrant_url = os.getenv("QDRANT_URL") or endpoint or "http://localhost:6333"
         qdrant_api_key = os.getenv("QDRANT_API_KEY") or api_key
         
-        # Ab Client me api_key bhi pass karenge cloud authorization ke liye
+        
         self.client = QdrantClient(
             url=qdrant_url,
             api_key=qdrant_api_key
@@ -39,7 +39,7 @@ class AISearchVectorStore:
         """
         Upload chunks directly to local Qdrant collection.
         """
-        # Ensure collection exists with correct dimensions (1024 for all-MiniLM-L6-v2)
+        # Ensure collection exists with correct dimensions (1024 for BAAI/bge-large-en-v1.5)
         try:
             self.client.get_collection(collection_name=self.collection_name)
         except Exception:
@@ -52,10 +52,10 @@ class AISearchVectorStore:
         points = []
 
         for idx, chunk in enumerate(chunks):
-            # Text content extract karo
+            
             text_content = chunk.page_content if hasattr(chunk, 'page_content') else str(chunk)
             
-            # Text ka embedding vector nikalo
+        
             vector = embeddings.embed_query(text_content)
 
             points.append(

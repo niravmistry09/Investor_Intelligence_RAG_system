@@ -6,7 +6,7 @@ from database.postgres_sql import get_engine, create_database
 def create_tables() -> None:
     engine = get_engine()
 
-    # 🔥 Supabase/PostgreSQL me RAG ke liye pgvector extension ko enable karna compulsory hai
+    
     setup_vector_extension = "CREATE EXTENSION IF NOT EXISTS vector;"
 
     query = """
@@ -27,7 +27,7 @@ def create_tables() -> None:
     """
 
     with engine.begin() as connection:
-        # Pehle vector extension enable karenge, fir table create karenge
+       
         connection.execute(text(setup_vector_extension))
         connection.execute(text(query))
 

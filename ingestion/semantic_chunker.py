@@ -49,10 +49,10 @@ if __name__ == "__main__":
     from langchain_huggingface import HuggingFaceEmbeddings
 
     print("Initializing local free HuggingFace embeddings for testing...")
-    # AzureOpenAIEmbeddings ko hatakar free local model lagaya
+    
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
-    # Local data test path (Adjust according to your current relative execution path)
+    
     markdown_file = "data/markdown/2024_Apple.md"
 
     if not Path(markdown_file).exists():

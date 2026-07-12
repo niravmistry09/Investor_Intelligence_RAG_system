@@ -12,7 +12,7 @@ def get_engine(database: str | None = None):
     """
     db_url = os.getenv("DATABASE_URL")
     if db_url:
-        # 🔥 Supabase standard / pooled connection configurations
+        
         if "localhost" not in db_url and "127.0.0.1" not in db_url:
             if "sslmode=disable" in db_url:
                 db_url = db_url.replace("sslmode=disable", "sslmode=require")
@@ -37,7 +37,7 @@ def get_engine(database: str | None = None):
     user = os.getenv("POSTGRES_USER") or os.getenv("DB_USER", "postgres")
     password = os.getenv("POSTGRES_PASSWORD") or os.getenv("DB_PASSWORD", "")
 
-    # 🔥 FIX: safe="." lagaya hai taaki Supabase pooler username ke dots (%) encode na ho jayein
+    
     encoded_user = quote(user, safe=".")
     encoded_password = quote(password, safe="")
 

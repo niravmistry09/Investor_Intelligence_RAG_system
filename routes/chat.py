@@ -18,12 +18,12 @@ class ChatRequest(BaseModel):
 @router.post("/chat")
 async def chat(request: ChatRequest):
     try:
-        # 1. Initialize Qdrant Client (AWS और क्लाउड प्रायरिटी के साथ)
+        # 1. Initialize Qdrant Client 
         qdrant_url = os.getenv("QDRANT_URL")
         qdrant_api_key = os.getenv("QDRANT_API_KEY")
         collection_name = os.getenv("QDRANT_COLLECTION_NAME") or "investor_intelligence"
 
-        # 🔥 सुरक्षा जांच: अगर AWS/क्लाउड एनवायरनमेंट में URL नहीं मिलता है, तो लोकलहोस्ट पर फॉलबैक करेंगे
+        
         if not qdrant_url:
             qdrant_url = "http://localhost:6333"
 
@@ -37,7 +37,7 @@ async def chat(request: ChatRequest):
         retriever = Retriever(client=client, collection_name=collection_name)
 
         # 3. Step A: Semantic Search (Vector Match)
-        # Groq limit safe rakhne ke liye hum locally 10 chunks fetch karenge
+        
         if request.company and request.year:
             semantic_docs = retriever.invoke(
                 query=request.question,
@@ -65,16 +65,16 @@ async def chat(request: ChatRequest):
             # Filter top 4 keyword matches
             bm25_top_docs = bm25.get_top_n(tokenized_query, semantic_docs, n=4)
             
-            # 🔥 FIX: Unhashable type error se bachne ke liye text-content unique check lagaya
+            
             seen_content = set()
             
-            # Pehle BM25 keyword matching chunks ko priority do
+            
             for doc in bm25_top_docs:
                 if doc.page_content not in seen_content:
                     seen_content.add(doc.page_content)
                     final_docs.append(doc)
             
-            # Fir top 2 pure semantic chunks ko add karo (agar unique hain)
+            
             for doc in semantic_docs[:2]:
                 if doc.page_content not in seen_content:
                     seen_content.add(doc.page_content)

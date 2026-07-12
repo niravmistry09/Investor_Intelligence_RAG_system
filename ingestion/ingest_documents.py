@@ -134,7 +134,7 @@ def check_if_already_ingested(client: QdrantClient, collection_name: str, source
         if not client.collection_exists(collection_name=collection_name):
             return False
             
-        # Ab hum company/year nahi, direct EXACT filename check kar rahe hain
+        
         filter_conditions = [
             models.FieldCondition(key="source", match=models.MatchValue(value=source_filename))
         ]

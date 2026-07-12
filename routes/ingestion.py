@@ -10,7 +10,6 @@ from ingestion.ingest_documents import ingest_document
 
 router = APIRouter()
 
-# 🔥 RAM FIX: मॉडल को हमेशा के लिए मेमोरी में री-यूज़ करने के लिए एक ग्लोबल वेरिएबल बनाएंगे
 _embeddings_model = None
 
 def get_embeddings_model():
@@ -23,7 +22,7 @@ def get_embeddings_model():
         # 1. High-accuracy 1024-dimension model
         _embeddings_model = HuggingFaceEmbeddings(
             model_name="BAAI/bge-large-en-v1.5",
-            model_kwargs={"device": "cpu"} # AWS EC2 के लिए CPU मोड अनिवार्य है
+            model_kwargs={"device": "cpu"} 
         )
     return _embeddings_model
 
@@ -47,12 +46,12 @@ async def upload_document(
                 buffer
             )
 
-        # 2. Fetch Qdrant Credentials (AWS और क्लाउड प्रायरिटी के साथ)
+        # 2. Fetch Qdrant Credentials 
         qdrant_url = os.getenv("QDRANT_URL")
         qdrant_api_key = os.getenv("QDRANT_API_KEY")
         collection_name = os.getenv("QDRANT_COLLECTION_NAME") or "investor_intelligence"
 
-        # 🔥 सुरक्षा जांच: अगर AWS/क्लाउड एनवायरनमेंट में URL नहीं मिलता है, तो लोकलहोस्ट पर फॉलबैक करेंगे
+        
         if not qdrant_url:
             qdrant_url = "http://localhost:6333"
 
@@ -63,7 +62,7 @@ async def upload_document(
             check_compatibility=False
         )
 
-        # मेमोरी ऑप्टिमाइज्ड मॉडल को सुरक्षित रूप से यहाँ कॉल कर रहे हैं
+       
         embeddings_model = get_embeddings_model()
 
         # 4. Process the document using our updated ingestion logic
@@ -81,7 +80,7 @@ async def upload_document(
         
     except Exception as e:
         print(f"Error in ingestion endpoint: {e}")
-        # यदि रैम फुल होने का रिस्क हो, तो ग्रेसफुली हैंडल करेंगे ताकि सर्वर क्रैश न हो
+        
         return {
             "message": f"Ingestion failed gracefully: {str(e)}",
             "file_name": file.filename

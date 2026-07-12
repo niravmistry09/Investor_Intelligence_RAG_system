@@ -7,7 +7,6 @@ load_dotenv()
 from qdrant_client import QdrantClient
 from langchain_huggingface import HuggingFaceEmbeddings
 
-# Purane all-MiniLM-L6-v2 ki jagah ye high-accuracy model:
 embeddings_model = HuggingFaceEmbeddings(model_name="BAAI/bge-large-en-v1.5")
 
 def search_vectorstore(query: str, top: int = 5):
@@ -20,7 +19,7 @@ def search_vectorstore(query: str, top: int = 5):
             "Missing Qdrant collection name. Set QDRANT_COLLECTION_NAME in your .env."
         )
 
-    # 1. Text query ko vector (numbers list) me convert karo
+    
     try:
         query_vector = embeddings_model.embed_query(query)
     except Exception as e:
@@ -42,7 +41,7 @@ def search_vectorstore(query: str, top: int = 5):
     for idx, result in enumerate(results, start=1):
         content = None
         
-        # 3. Qdrant me text payload dictionary me hota hai, use safely extract karo
+        
         payload = result.payload or {}
         content = payload.get("page_content") or payload.get("content")
 

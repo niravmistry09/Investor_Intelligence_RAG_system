@@ -15,7 +15,7 @@ def create_index(
     qdrant_url = endpoint or os.getenv("QDRANT_URL") or "http://localhost:6333"
     qdrant_api_key = api_key or os.getenv("QDRANT_API_KEY")
     
-    # Client me api_key pass karo
+    
     client = QdrantClient(url=qdrant_url, api_key=qdrant_api_key)
     print(f"Connecting to Qdrant at {qdrant_url}...")
 
@@ -26,7 +26,7 @@ def create_index(
     except Exception:
         print(f"Collection '{index_name}' does not exist. Creating new one...")
 
-    # 3. Create or Recreate collection with Cosine distance metric and 384 dimensions
+    # 3. Create or Recreate collection with Cosine distance metric and 1024 dimensions
     client.recreate_collection(
         collection_name=index_name,
         vectors_config=models.VectorParams(

@@ -24,8 +24,7 @@ async def lifespan(app: FastAPI):
     create_database()
     create_tables()
 
-    # Qdrant index create/delete yahan intentionally nahi hai,
-    # taaki server restart hone par existing data delete na ho.
+    
 
     yield
 
