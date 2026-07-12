@@ -45,5 +45,5 @@ if __name__ == "__main__":
     create_index(
         endpoint=qdrant_url,
         index_name=collection_name,
-        embedding_dimensions=1024  # 👈 Yahan 384 ki jagah 1024 kar do!
+        embedding_dimensions=1024  
     )

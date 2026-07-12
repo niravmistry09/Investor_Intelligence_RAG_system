@@ -8,20 +8,26 @@ load_dotenv()
 
 def get_engine(database: str | None = None):
     """
-    Create PostgreSQL connection engine. Supports both Local and Cloud AWS DBs automatically.
+    Create PostgreSQL connection engine. Optimised for Supabase & Local DBs.
     """
     db_url = os.getenv("DATABASE_URL")
     if db_url:
-        # 🔥 AWS / क्लाउड के लिए SSL मोड को सुरक्षित तरीके से ऑन रखना अनिवार्य है
+        # 🔥 Supabase standard / pooled connection configurations
         if "localhost" not in db_url and "127.0.0.1" not in db_url:
-            # अगर URL में sslmode नहीं है, तो जोड़ें, और अगर 'disable' है तो उसे 'require' करें
+            # Agar URL me sslmode nahi hai, toh use configure karein
             if "sslmode=disable" in db_url:
                 db_url = db_url.replace("sslmode=disable", "sslmode=require")
             elif "sslmode" not in db_url:
                 separator = "&" if "?" in db_url else "?"
                 db_url = f"{db_url}{separator}sslmode=require"
             
-            return create_engine(db_url, connect_args={"sslmode": "require"})
+            # 💡 Supabase supports standard postgres connection pooling parameters
+            return create_engine(
+                db_url, 
+                connect_args={"sslmode": "require"},
+                pool_pre_ping=True,  # Supabase stale connections ko drop karne ke liye
+                pool_recycle=300     # Connections refresh hote rahenge
+            )
         return create_engine(db_url)
 
     # Fallback to individual variables if DATABASE_URL is missing
@@ -36,7 +42,7 @@ def get_engine(database: str | None = None):
     encoded_user = quote(user, safe="")
     encoded_password = quote(password, safe="")
 
-    # लोकल मशीन के लिए disable रहेगा, लेकिन क्लाउड के लिए ऑटो-डिटेक्ट होगा
+    # Local machine ke liye disable, Supabase ke liye require
     ssl_mode = "disable" if host in ["localhost", "127.0.0.1"] else "require"
 
     connection_string = (
@@ -46,21 +52,30 @@ def get_engine(database: str | None = None):
     )
 
     if ssl_mode == "require":
-        return create_engine(connection_string, connect_args={"sslmode": "require"})
+        return create_engine(
+            connection_string, 
+            connect_args={"sslmode": "require"},
+            pool_pre_ping=True,
+            pool_recycle=300
+        )
     return create_engine(connection_string)
 
 
 def create_database() -> None:
     """
-    Create the target database if it does not exist. Gracefully bypasses on Cloud environments.
+    Create the target database if it does not exist. Gracefully bypasses on Supabase cloud.
     """
     target_db = os.getenv("POSTGRES_DATABASE") or os.getenv("DB_NAME", "investor_intelligence")
     db_url = os.getenv("DATABASE_URL")
+    host = os.getenv("POSTGRES_HOST") or os.getenv("DB_HOST", "localhost")
 
-    # 🔥 सुरक्षा जांच: अगर क्लाउड डेटाबेस है, तो हम 'CREATE DATABASE' स्क्रिप्ट को स्किप कर देंगे 
-    # ताकि परमिशन एरर की वजह से सर्वर क्रैश न हो।
-    if db_url and "localhost" not in db_url and "127.0.0.1" not in db_url:
-        print("Cloud Database detected. Skipping native database creation to avoid permission crash.")
+    # 🔥 Supabase Security Guard: Supabase me defaults database 'postgres' hi hota hai,
+    # aur aap custom databases programmatic way me create nahi kar sakte (Permission Denied error aayega).
+    is_supabase = (db_url and "supabase" in db_url) or (host and "supabase" in host)
+    is_cloud = db_url and "localhost" not in db_url and "127.0.0.1" not in db_url
+
+    if is_supabase or is_cloud:
+        print("Supabase/Cloud Database detected. Skipping native database creation to avoid permission crash.")
         return
 
     try:
@@ -99,6 +114,5 @@ def create_database() -> None:
             
     except Exception as exc:
         print(f"Failed to create database locally: {exc}")
-        # इसे केवल लोकल पर क्रैश होने देंगे, क्लाउड पर नहीं
         if not db_url or "localhost" in db_url:
             raise

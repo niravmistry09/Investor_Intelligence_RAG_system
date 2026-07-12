@@ -5,7 +5,7 @@ from qdrant_client import QdrantClient, models
 from langchain_huggingface import HuggingFaceEmbeddings
 
 # Local embedding model initialization (all-MiniLM-L6-v2)
-embeddings_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+embeddings_model = HuggingFaceEmbeddings(model_name="BAAI/bge-large-en-v1.5")
 
 
 class AISearchVectorStore:
