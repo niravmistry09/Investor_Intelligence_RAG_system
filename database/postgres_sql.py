@@ -14,35 +14,33 @@ def get_engine(database: str | None = None):
     if db_url:
         # 🔥 Supabase standard / pooled connection configurations
         if "localhost" not in db_url and "127.0.0.1" not in db_url:
-            # Agar URL me sslmode nahi hai, toh use configure karein
             if "sslmode=disable" in db_url:
                 db_url = db_url.replace("sslmode=disable", "sslmode=require")
             elif "sslmode" not in db_url:
                 separator = "&" if "?" in db_url else "?"
                 db_url = f"{db_url}{separator}sslmode=require"
             
-            # 💡 Supabase supports standard postgres connection pooling parameters
             return create_engine(
                 db_url, 
                 connect_args={"sslmode": "require"},
-                pool_pre_ping=True,  # Supabase stale connections ko drop karne ke liye
-                pool_recycle=300     # Connections refresh hote rahenge
+                pool_pre_ping=True,  
+                pool_recycle=300     
             )
         return create_engine(db_url)
 
     # Fallback to individual variables if DATABASE_URL is missing
     if database is None:
-        database = os.getenv("POSTGRES_DATABASE") or os.getenv("DB_NAME", "investor_intelligence")
+        database = os.getenv("POSTGRES_DATABASE") or os.getenv("DB_NAME", "postgres")
     
     host = os.getenv("POSTGRES_HOST") or os.getenv("DB_HOST", "localhost")
     port = os.getenv("POSTGRES_PORT") or os.getenv("DB_PORT", "5432")
     user = os.getenv("POSTGRES_USER") or os.getenv("DB_USER", "postgres")
     password = os.getenv("POSTGRES_PASSWORD") or os.getenv("DB_PASSWORD", "")
 
-    encoded_user = quote(user, safe="")
+    # 🔥 FIX: safe="." lagaya hai taaki Supabase pooler username ke dots (%) encode na ho jayein
+    encoded_user = quote(user, safe=".")
     encoded_password = quote(password, safe="")
 
-    # Local machine ke liye disable, Supabase ke liye require
     ssl_mode = "disable" if host in ["localhost", "127.0.0.1"] else "require"
 
     connection_string = (
@@ -65,12 +63,10 @@ def create_database() -> None:
     """
     Create the target database if it does not exist. Gracefully bypasses on Supabase cloud.
     """
-    target_db = os.getenv("POSTGRES_DATABASE") or os.getenv("DB_NAME", "investor_intelligence")
+    target_db = os.getenv("POSTGRES_DATABASE") or os.getenv("DB_NAME", "postgres")
     db_url = os.getenv("DATABASE_URL")
     host = os.getenv("POSTGRES_HOST") or os.getenv("DB_HOST", "localhost")
 
-    # 🔥 Supabase Security Guard: Supabase me defaults database 'postgres' hi hota hai,
-    # aur aap custom databases programmatic way me create nahi kar sakte (Permission Denied error aayega).
     is_supabase = (db_url and "supabase" in db_url) or (host and "supabase" in host)
     is_cloud = db_url and "localhost" not in db_url and "127.0.0.1" not in db_url
 
