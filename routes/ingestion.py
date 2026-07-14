@@ -1,8 +1,9 @@
-import shutil
 import os
+import shutil
 from fastapi import APIRouter, File, UploadFile
 from pathlib import Path
-from langchain_huggingface import HuggingFaceEmbeddings
+# CHANGER 1: Changed import to Inference API class
+from langchain_huggingface import HuggingFaceInferenceAPIEmbeddings
 from qdrant_client import QdrantClient
 
 # Import our updated ingestion function
@@ -15,14 +16,16 @@ _embeddings_model = None
 def get_embeddings_model():
     """
     Lazy load the embedding model to optimize AWS 1GB RAM memory usage.
+    Using Hugging Face Inference API to offload computation and save memory.
     """
     global _embeddings_model
     if _embeddings_model is None:
-        print("Loading Embedding Model into AWS Memory safely...")
-        # 1. High-accuracy 1024-dimension model
-        _embeddings_model = HuggingFaceEmbeddings(
-            model_name="BAAI/bge-large-en-v1.5",
-            model_kwargs={"device": "cpu"} 
+        print("Initializing HuggingFace Inference API safely (Zero Local Memory Overhead)...")
+        # CHANGER 2: Initializing via API instead of local loading
+        # Model kwargs (like device='cpu') are removed as execution happens on HF servers
+        _embeddings_model = HuggingFaceInferenceAPIEmbeddings(
+            api_key=os.getenv("HUGGINGFACEHUB_API_TOKEN"),
+            model_name="BAAI/bge-large-en-v1.5"
         )
     return _embeddings_model
 
@@ -51,7 +54,6 @@ async def upload_document(
         qdrant_api_key = os.getenv("QDRANT_API_KEY")
         collection_name = os.getenv("QDRANT_COLLECTION_NAME") or "investor_intelligence"
 
-        
         if not qdrant_url:
             qdrant_url = "http://localhost:6333"
 
@@ -62,7 +64,6 @@ async def upload_document(
             check_compatibility=False
         )
 
-       
         embeddings_model = get_embeddings_model()
 
         # 4. Process the document using our updated ingestion logic

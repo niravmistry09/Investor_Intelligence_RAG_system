@@ -2,11 +2,12 @@ import os
 import uuid
 from types import SimpleNamespace
 from qdrant_client import QdrantClient, models
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceInferenceAPIEmbeddings
 
-# Local embedding model initialization 
-embeddings_model = HuggingFaceEmbeddings(model_name="BAAI/bge-large-en-v1.5")
-
+embeddings_model = HuggingFaceInferenceAPIEmbeddings(
+    api_key=os.getenv("HUGGINGFACEHUB_API_TOKEN"),
+    model_name="BAAI/bge-large-en-v1.5"
+)
 
 class AISearchVectorStore:
     """Qdrant Vector Store wrapper matching original interface names to prevent breakage."""

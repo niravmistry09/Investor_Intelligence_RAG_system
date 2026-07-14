@@ -2,9 +2,7 @@ import os
 import uuid
 from pathlib import Path
 from dotenv import load_dotenv
-from langchain_huggingface import HuggingFaceEmbeddings
 from qdrant_client import QdrantClient, models
-
 from ingestion.pdf_to_markdown import PDFToMarkdownConverter
 from ingestion.semantic_chunker import chunk_markdown
 from rag.kpi_extractor_rag import extract_financial_metrics, Retriever
@@ -12,9 +10,12 @@ from database.save_metrics import save_metrics
 
 load_dotenv()
 
-# High-accuracy 1024-dimension model
-embeddings_model = HuggingFaceEmbeddings(model_name="BAAI/bge-large-en-v1.5")
+from langchain_huggingface import HuggingFaceInferenceAPIEmbeddings
 
+embeddings_model = HuggingFaceInferenceAPIEmbeddings(
+    api_key=os.getenv("HUGGINGFACEHUB_API_TOKEN"),
+    model_name="BAAI/bge-large-en-v1.5"
+)
 
 def parse_company_year(pdf_file: Path) -> tuple[str, str]:
     """Parse company and year from a PDF filename."""

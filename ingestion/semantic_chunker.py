@@ -46,13 +46,15 @@ def chunk_markdown(
 
 
 if __name__ == "__main__":
-    from langchain_huggingface import HuggingFaceEmbeddings
+    from langchain_huggingface import HuggingFaceInferenceAPIEmbeddings
 
-    print("Initializing local free HuggingFace embeddings for testing...")
+    print("Initializing HuggingFace Inference API embeddings for testing (No Local Load)...")
     
-    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    embeddings = HuggingFaceInferenceAPIEmbeddings(
+        api_key=os.getenv("HUGGINGFACEHUB_API_TOKEN"),
+        model_name="BAAI/bge-large-en-v1.5"
+    )
 
-    
     markdown_file = "data/markdown/2024_Apple.md"
 
     if not Path(markdown_file).exists():

@@ -2,15 +2,18 @@ import os
 from types import SimpleNamespace
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
-from langchain_huggingface import HuggingFaceEmbeddings
-
+from langchain_huggingface import HuggingFaceInferenceAPIEmbeddings
 from llm.groq_llm import get_structured_completion
 from qdrant_client import QdrantClient, models
 
 load_dotenv()
 
-# High-accuracy 1024-dimension model alignment
-embeddings_model = HuggingFaceEmbeddings(model_name="BAAI/bge-large-en-v1.5")
+
+embeddings_model = HuggingFaceInferenceAPIEmbeddings(
+    api_key=os.getenv("HUGGINGFACEHUB_API_TOKEN"),
+    model_name="BAAI/bge-large-en-v1.5"
+)
+
 
 class FinancialMetrics(BaseModel):
     revenue: str | int | None = Field(None, alias="Revenue")
