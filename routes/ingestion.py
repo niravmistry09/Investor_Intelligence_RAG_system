@@ -2,30 +2,23 @@ import os
 import shutil
 from fastapi import APIRouter, File, UploadFile
 from pathlib import Path
-# CHANGER 1: Changed import to Inference API class
-from langchain_huggingface import HuggingFaceInferenceAPIEmbeddings
+# 1. Wapas purana normal import lao
+from langchain_huggingface import HuggingFaceEmbeddings
 from qdrant_client import QdrantClient
 
-# Import our updated ingestion function
 from ingestion.ingest_documents import ingest_document
 
 router = APIRouter()
-
 _embeddings_model = None
 
 def get_embeddings_model():
-    """
-    Lazy load the embedding model to optimize AWS 1GB RAM memory usage.
-    Using Hugging Face Inference API to offload computation and save memory.
-    """
     global _embeddings_model
     if _embeddings_model is None:
-        print("Initializing HuggingFace Inference API safely (Zero Local Memory Overhead)...")
-        # CHANGER 2: Initializing via API instead of local loading
-        # Model kwargs (like device='cpu') are removed as execution happens on HF servers
-        _embeddings_model = HuggingFaceInferenceAPIEmbeddings(
-            api_key=os.getenv("HUGGINGFACEHUB_API_TOKEN"),
-            model_name="BAAI/bge-large-en-v1.5"
+        print("Loading Embedding Model into Local Memory safely...")
+        # 2. Wapas local initialization bina kisi API key ke
+        _embeddings_model = HuggingFaceEmbeddings(
+            model_name="BAAI/bge-large-en-v1.5",
+            model_kwargs={"device": "cpu"}
         )
     return _embeddings_model
 

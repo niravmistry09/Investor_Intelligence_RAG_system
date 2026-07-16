@@ -10,11 +10,12 @@ from database.save_metrics import save_metrics
 
 load_dotenv()
 
-from langchain_huggingface import HuggingFaceInferenceAPIEmbeddings
+import os
+from langchain_huggingface import HuggingFaceEmbeddings
 
-embeddings_model = HuggingFaceInferenceAPIEmbeddings(
-    api_key=os.getenv("HUGGINGFACEHUB_API_TOKEN"),
-    model_name="BAAI/bge-large-en-v1.5"
+embeddings_model = HuggingFaceEmbeddings(
+    model_name="BAAI/bge-large-en-v1.5",
+    model_kwargs={"device": "cpu"}
 )
 
 def parse_company_year(pdf_file: Path) -> tuple[str, str]:
